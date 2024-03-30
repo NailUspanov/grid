@@ -24,17 +24,28 @@ func checkHealth() {
 		Status bool `json:"status"`
 	}
 	for {
-		for url, _ := range nodes {
+		for url, _ := range nodesConcurrent.m {
 			health := HealthResponse{}
 			response, err := makeRESTRequest(fmt.Sprintf("http://%s/health", url), "GET", []byte(""))
 			err = json.Unmarshal(response, &health)
-			if err != nil {
-				slog.Error(fmt.Sprintf("error unmarshalling: %v", err))
-				continue
-			}
-			if !health.Status {
+			if !health.Status || err != nil {
 				delete(nodes, url)
 				offNodes[url] = struct{}{}
+
+				go func(url string) {
+					if b, ok := processingNodes[url]; ok {
+						n := <-pool
+						delete(processingNodes, url)
+						processingNodes[fmt.Sprintf("%s:%d", n.IP, n.Port)] = b
+						slog.Info(fmt.Sprintf("Node %s down. Resend task to %s:%d", url, n.IP, n.Port))
+						_, err = makeRESTRequest(fmt.Sprintf("http://%s:%d/execute", n.IP, n.Port), "POST", b)
+						if err != nil {
+							slog.Error(err.Error())
+							return
+						}
+					}
+				}(url)
+
 			}
 		}
 		time.Sleep(10 * time.Second)
@@ -58,6 +69,10 @@ func registerNode(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Узел зарегистрирован: %+v\n", newNode)
 
 	w.WriteHeader(http.StatusCreated)
+}
+
+func check(newNode Node) {
+	pool <- newNode
 }
 
 // getNodes обрабатывает запрос GET для получения списка активных узлов

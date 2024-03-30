@@ -6,15 +6,21 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
+	"strconv"
 )
 
 func listen() {
+	l, close := createListener()
+	defer close()
+	log.Println("listening at", l.Addr().(*net.TCPAddr).Port)
 
 	http.HandleFunc("/execute", execute)
 	http.HandleFunc("/health", healthCheckHandler)
 
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", httpPort), nil))
+	//log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", httpPort), nil))
+	log.Fatal(http.Serve(l, nil))
 }
 
 func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
@@ -64,4 +70,14 @@ func makeRESTRequest(url, method string, requestBody []byte) ([]byte, error) {
 	}
 
 	return responseBody, nil
+}
+
+func createListener() (l net.Listener, close func()) {
+	l, err := net.Listen("tcp", fmt.Sprintf(":%s", strconv.Itoa(httpPort)))
+	if err != nil {
+		panic(err)
+	}
+	return l, func() {
+		_ = l.Close()
+	}
 }

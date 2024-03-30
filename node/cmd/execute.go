@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/exec"
@@ -10,7 +11,8 @@ import (
 )
 
 type Request struct {
-	Task string `json:"task"`
+	Task       string `json:"task"`
+	MasterNode string `json:"master_node"`
 }
 
 func execute(w http.ResponseWriter, r *http.Request) {
@@ -49,9 +51,11 @@ func execute(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Результат выполнения функции:", string(out))
 
 	resp := struct {
-		Out string `json:"out"`
+		Out  string `json:"out"`
+		Host string `json:"host"`
 	}{
-		Out: string(out),
+		Out:  string(out),
+		Host: fmt.Sprintf("localhost:%d", httpPort),
 	}
 	jsonResponse, err := json.Marshal(resp)
 	if err != nil {
@@ -59,8 +63,14 @@ func execute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(jsonResponse)
+	_, err = makeRESTRequest(fmt.Sprintf("http://%s/receive", req.MasterNode), "POST", jsonResponse)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
+
+	//w.Header().Set("Content-Type", "application/json")
+	//w.Write(jsonResponse)
 }
 
 func unescapeString(s string) string {

@@ -48,12 +48,11 @@ func generateUniquePassword(n, length int, start, end int, resultChan chan strin
 }
 
 func main() {
-	length := 4 // Длина пароля
+	length := 2 // Длина пароля
 
 	resultChan := make(chan string)
-	go generateUniquePassword(1, length, 47, 49, resultChan)
-	go generateUniquePassword(1, length, 49, 51, resultChan)
-	go generateUniquePassword(1, length, 51, 53, resultChan)
+
+	go generateUniquePassword(1, length, 50, 51, resultChan)
 
 	for password := range resultChan {
 		if isValidArchivePassword(password) {

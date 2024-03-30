@@ -30,7 +30,7 @@ func (t TaskMaster) GetNextTask() string {
 	//start := asciiMin + counterTask*batchSize
 	//end := start + batchSize - 1
 
-	start := 47 + counterTask*batchSize
+	start := 50 + counterTask*batchSize
 	end := start + batchSize
 	//start := 48
 	//end := 57
@@ -88,7 +88,7 @@ func generateUniquePassword(n, length int, start, end int, resultChan chan strin
 }
 
 func main() {
-	length := 4 // Длина пароля
+	length := 3 // Длина пароля
 
 	resultChan := make(chan string)
 

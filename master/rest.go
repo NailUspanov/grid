@@ -15,6 +15,7 @@ func listen() {
 	http.HandleFunc("/remove", removeNode)
 	http.HandleFunc("/nodes", getNodes)
 	http.HandleFunc("/health", healthCheckHandler)
+	http.HandleFunc("/receive", receiveTask)
 
 	fmt.Println("Сервер запущен на порте 8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
